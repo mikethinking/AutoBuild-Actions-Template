@@ -10,13 +10,17 @@ Firmware_Diy_Core() {
 	Default_IP="192.168.1.1"
 	Banner_Message="Powered by AutoBuild-Actions"
 
+	Load_Common_Config=true
+	Load_CustomPackages_List=true
 	Short_Firmware_Date=true
 	Checkout_Virtual_Images=false
-	Firmware_Format=AUTO
+	Firmware_Format=false
 	REGEX_Skip_Checkout="packages|buildinfo|sha256sums|manifest|kernel|rootfs|factory"
 
 	INCLUDE_AutoBuild_Features=true
-	INCLUDE_Original_OpenWrt_Compatible=false
+	INCLUDE_DRM_I915=true
+	INCLUDE_Argon=true
+	INCLUDE_Obsolete_PKG_Compatible=false
 }
 
 Firmware_Diy() {
@@ -40,5 +44,17 @@ Firmware_Diy() {
 	# ${FEEDS_PKG}			OpenWrt 源码目录下的 package/feeds/packages 目录
 	# ${BASE_FILES}			OpenWrt 源码目录下的 package/base-files/files 目录
 
-	:
+	case "${OP_Maintainer}/${OP_REPO_NAME}:${OP_BRANCH}" in
+	coolsnowwolf/lede:master)
+		sed -i "s?/bin/login?/usr/libexec/login.sh?g" ${feeds_pkgs}/ttyd/files/ttyd.config
+	;;
+	esac
+
+	case "${TARGET_PROFILE}" in
+	d-team_newifi-d2)
+		patch -i ${CustomFiles}/mac80211_d-team_newifi-d2.patch package/kernel/mac80211/files/lib/wifi/mac80211.sh
+		Copy ${CustomFiles}/system_d-team_newifi-d2 ${base_files}/etc/config system
+		[[ ${OP_REPO_NAME} == lede ]] && sed -i "/DEVICE_COMPAT_VERSION := 1.1/d" target/linux/ramips/image/mt7621.mk
+	;;
+	esac
 }
